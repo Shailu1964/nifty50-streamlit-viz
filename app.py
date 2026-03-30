@@ -1160,9 +1160,12 @@ with tab3:
     """, unsafe_allow_html=True)
 
     # Build styled HTML table
+    # NOTE: st.markdown() strips <table>/<tr>/<td> tags in newer Streamlit versions.
+    # We use st.components.v1.html() to render the full table safely inside an iframe.
+    import streamlit.components.v1 as components
+
     rows_html = ""
     for metric, value in stats.items():
-        # Determine value color
         if "Return" in metric or "Win" in metric or "Sharpe" in metric:
             val_color = ACCENT_GREEN if (isinstance(value, (int, float)) and value >= 0) else ACCENT_RED
         elif "Drawdown" in metric or "Negative" in metric:
@@ -1172,23 +1175,43 @@ with tab3:
 
         rows_html += f"""
         <tr>
-            <td style='color:{TEXT_MUTED};letter-spacing:1px;font-size:0.78rem;'>{metric}</td>
-            <td style='color:{val_color};font-weight:600;text-align:right;'>{value}</td>
+            <td style='color:{TEXT_MUTED};letter-spacing:1px;font-size:0.78rem;padding:10px 14px;
+                        border-bottom:1px solid #1A2540;'>{metric}</td>
+            <td style='color:{val_color};font-weight:600;text-align:right;padding:10px 14px;
+                        border-bottom:1px solid #1A2540;'>{value}</td>
         </tr>"""
 
-    st.markdown(f"""
-    <table class="stat-table">
+    table_html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {{ margin:0; padding:0; background:transparent; font-family:'JetBrains Mono',monospace; }}
+        table {{ width:100%; border-collapse:separate; border-spacing:0; font-size:0.8rem; background:transparent; }}
+        th {{
+            background:#0F1629; color:#6B7A99; font-weight:600; letter-spacing:2px;
+            font-size:0.65rem; padding:10px 14px; border-bottom:1px solid #1E2D4A;
+            text-transform:uppercase; font-family:'JetBrains Mono',monospace;
+        }}
+        tr:hover td {{ background:rgba(0,196,255,0.04); }}
+    </style>
+    </head>
+    <body>
+    <table>
         <thead>
             <tr>
                 <th style='text-align:left;'>METRIC</th>
                 <th style='text-align:right;'>VALUE</th>
             </tr>
         </thead>
-        <tbody>
-            {rows_html}
-        </tbody>
+        <tbody>{rows_html}</tbody>
     </table>
-    """, unsafe_allow_html=True)
+    </body>
+    </html>
+    """
+
+    components.html(table_html, height=len(stats) * 42 + 55, scrolling=False)
 
     # Interpretation notes
     st.markdown("<br>", unsafe_allow_html=True)
