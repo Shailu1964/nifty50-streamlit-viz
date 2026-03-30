@@ -821,11 +821,23 @@ def build_forecast(df: pd.DataFrame, forecast_days: int = 180) -> go.Figure:
         showlegend=True,
     ))
 
-    # Vertical separator
-    fig.add_vline(x=last_date.to_pydatetime() if hasattr(last_date, 'to_pydatetime') else last_date,
-                  line=dict(color=ACCENT_BLUE, dash="dot", width=1.5),
-                  annotation_text="Forecast →",
-                  annotation_font=dict(color=ACCENT_BLUE, size=11))
+    # Vertical separator using a shape (avoids Plotly add_vline string/numeric type error)
+    fig.add_shape(
+        type="line",
+        x0=last_date, x1=last_date,
+        y0=0, y1=1,
+        xref="x", yref="paper",
+        line=dict(color=ACCENT_BLUE, dash="dot", width=1.5),
+    )
+    fig.add_annotation(
+        x=last_date, y=1,
+        xref="x", yref="paper",
+        text="Forecast →",
+        font=dict(color=ACCENT_BLUE, size=11),
+        showarrow=False,
+        yanchor="bottom",
+        xanchor="left",
+    )
 
     # Annotation: projected end value
     fig.add_annotation(
@@ -1037,7 +1049,7 @@ with tab1:
     """, unsafe_allow_html=True)
 
     fig_candle = build_candlestick_rsi(df, selected_name)
-    st.plotly_chart(fig_candle, use_container_width=True, config={"displayModeBar": True})
+    st.plotly_chart(fig_candle, width="stretch", config={"displayModeBar": True})
 
     # SMA crossover signal
     if not df["SMA_50"].isna().all() and not df["SMA_200"].isna().all():
@@ -1092,7 +1104,7 @@ with tab1:
         <div class="section-title" style="color:#FFD700;">MACD Analysis</div>
     </div>
     """, unsafe_allow_html=True)
-    st.plotly_chart(build_macd(df), use_container_width=True)
+    st.plotly_chart(build_macd(df), width="stretch")
 
 # ════════════════════════════════════════════════════════════
 # TAB 2 — VOLATILITY ANALYSIS
@@ -1104,7 +1116,7 @@ with tab2:
         <div class="section-title">Bollinger Bands · Squeeze Detection</div>
     </div>
     """, unsafe_allow_html=True)
-    st.plotly_chart(build_bollinger(df, selected_name), use_container_width=True)
+    st.plotly_chart(build_bollinger(df, selected_name), width="stretch")
 
     col_hist, col_gauge = st.columns([1.6, 1])
     with col_hist:
@@ -1114,7 +1126,7 @@ with tab2:
             <div class="section-title">Returns Distribution</div>
         </div>
         """, unsafe_allow_html=True)
-        st.plotly_chart(build_returns_histogram(df), use_container_width=True)
+        st.plotly_chart(build_returns_histogram(df), width="stretch")
 
     with col_gauge:
         st.markdown("""
@@ -1125,7 +1137,7 @@ with tab2:
         """, unsafe_allow_html=True)
         st.plotly_chart(
             build_volatility_gauge(current_vol, hist_mean_vol, hist_std_vol),
-            use_container_width=True,
+            width="stretch",
         )
 
     st.markdown("""
@@ -1134,7 +1146,7 @@ with tab2:
         <div class="section-title">Rolling Annualised Volatility</div>
     </div>
     """, unsafe_allow_html=True)
-    st.plotly_chart(build_rolling_vol(df), use_container_width=True)
+    st.plotly_chart(build_rolling_vol(df), width="stretch")
 
 # ════════════════════════════════════════════════════════════
 # TAB 3 — STATISTICAL SUMMARY
@@ -1217,7 +1229,7 @@ with tab3:
         height=340,
     )
     fig_corr.update_layout(**corr_layout)
-    st.plotly_chart(fig_corr, use_container_width=True)
+    st.plotly_chart(fig_corr, width="stretch")
 
 # ════════════════════════════════════════════════════════════
 # TAB 4 — FORECASTING
@@ -1233,7 +1245,7 @@ with tab4:
     with st.spinner("Computing forecast..."):
         fig_fc, daily_drift, pct_outlook = build_forecast(df, forecast_days)
 
-    st.plotly_chart(fig_fc, use_container_width=True)
+    st.plotly_chart(fig_fc, width="stretch")
 
     # Forecast KPIs
     direction = "BULLISH 📈" if pct_outlook > 0 else "BEARISH 📉"
